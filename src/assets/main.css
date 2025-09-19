@@ -1,0 +1,62 @@
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  font-family: "Montserrat", sans-serif;
+}
+
+nav {
+  margin: 0;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+h1 {
+  padding: 0;
+  margin: 0;
+}
+
+h2 {
+  padding: 0;
+  margin: 0;
+}
+
+h3 {
+  padding: 0;
+  margin: 0;
+}
+
+h4 {
+  padding: 0;
+  margin: 0;
+}
+/* Reset default body styles */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  font-family: "Montserrat", sans-serif;
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Убедитесь, что все родительские контейнеры не имеют скролла */
+.container,
+.main-content,
+.logs-page,
+.log-list-container {
+  overflow: hidden;
+}
+
+/* Только список логов имеет скролл */
+.log-list {
+  overflow-y: auto;
+}

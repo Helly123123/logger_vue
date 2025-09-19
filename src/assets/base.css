@@ -1,0 +1,28 @@
+/* Reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* overflow: hidden; */
+  height: 100vh;
+  font-family: "Montserrat", sans-serif;
+  background-color: red !important; /* Для теста */
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Убедитесь, что все контейнеры не скроллятся */
+.container,
+.main-content,
+.logs-page,
+.log-list-container {
+  overflow: hidden !important;
+}
