@@ -56,24 +56,8 @@
                 @change="applyFilters"
               >
                 <option value="all">Все уровни</option>
-                <option value="INFO">Info</option>
-                <option value="WARN">Warning</option>
+                <option value="SUCCESS">Success</option>
                 <option value="ERROR">Error</option>
-                <option value="DEBUG">Debug</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label">Сервер:</label>
-              <select
-                v-model="selectedServer"
-                class="filter-select"
-                @change="applyFilters"
-              >
-                <option value="all">Все серверы</option>
-                <option value="Frontend_vue">Frontend</option>
-                <option value="Be_pay">Be Pay</option>
-                <option value="Be_auth">Be Auth</option>
               </select>
             </div>
 

@@ -11,10 +11,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import AsideMenu from "./components/Menu/LeftAsideMenu/AsideMenu.vue";
-import LoginPage from "./pages/Login.vue"; // Импортируем компонент логина
+import LoginPage from "./pages/Login.vue";
 
 const router = useRouter();
 const isAuthenticated = ref(false);
@@ -22,9 +22,14 @@ const isAuthenticated = ref(false);
 // Функция проверки токена
 const checkAuth = () => {
   const token = localStorage.getItem("authToken");
-  isAuthenticated.value = !!token; // Превращаем в boolean
+  isAuthenticated.value = !!token;
 
-  // Если нет токена и мы не на странице логина, перенаправляем
+  // Если есть токен и мы на странице логина, перенаправляем на logs
+  if (token && router.currentRoute.value.path === "/login") {
+    router.push("/logs");
+  }
+
+  // Если нет токена и мы не на странице логина, перенаправляем на логин
   if (!token && router.currentRoute.value.path !== "/login") {
     router.push("/login");
   }
@@ -38,7 +43,7 @@ const logout = () => {
   router.push("/login");
 };
 
-// Слушаем изменения localStorage (на случай выхода из другого окна)
+// Слушаем изменения localStorage
 const handleStorageChange = (event) => {
   if (event.key === "authToken") {
     checkAuth();
@@ -50,24 +55,25 @@ const handleLogoutEvent = () => {
   logout();
 };
 
+// Следим за изменениями маршрута
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    checkAuth();
+  }
+);
+
 onMounted(() => {
-  // Первоначальная проверка
   checkAuth();
-
-  // Слушаем изменения в localStorage
   window.addEventListener("storage", handleStorageChange);
-
-  // Слушаем custom event для выхода
   window.addEventListener("logout", handleLogoutEvent);
 });
 
 onUnmounted(() => {
-  // Убираем слушатели
   window.removeEventListener("storage", handleStorageChange);
   window.removeEventListener("logout", handleLogoutEvent);
 });
 
-// Экспортируем функции для использования в дочерних компонентах
 defineExpose({
   checkAuth,
   logout,
@@ -88,6 +94,6 @@ defineExpose({
   flex: 1;
   background-color: #f8fafc;
   font-family: "Montserrat", sans-serif;
-  overflow: hidden; /* Убираем скролл у основного контента */
+  overflow: hidden;
 }
 </style>
