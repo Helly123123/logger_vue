@@ -1,11 +1,14 @@
 <template>
   <div class="logs-page">
     <LogHeader
+      v-if="filters"
+      :close="chengeFilter"
       @refresh="loadLogs"
       @filter-change="handleFilterChange"
       ref="headerRef"
     />
     <LogList
+      :chengeFilter="chengeFilter"
       :server="server"
       :domain="domain"
       :logs="filteredLogs"
@@ -32,6 +35,7 @@ const props = defineProps({
   },
 });
 
+const filters = ref(false);
 const logs = ref([]);
 const loading = ref(false);
 const headerRef = ref(null);
@@ -47,6 +51,8 @@ const currentFilters = ref({
 const handleFilterChange = (filters) => {
   currentFilters.value = { ...filters };
 };
+
+const chengeFilter = () => (filters.value = !filters.value);
 
 // Фильтрация логов
 const filteredLogs = computed(() => {

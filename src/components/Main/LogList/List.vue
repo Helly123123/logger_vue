@@ -19,6 +19,30 @@
         </svg>
         {{ showStats ? "Скрыть статистику" : "Показать статистику" }}
       </button>
+      <button class="open-modal-btn" @click="chengeFilter">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        Фильтры
+      </button>
     </div>
 
     <div v-if="showStats" class="log-stats">
@@ -150,7 +174,7 @@
 
       <div v-else class="log-content">
         <!-- Блок логов с отдельным скроллом -->
-        <div class="log-list">
+        <div class="log-list" ref="logListRef">
           <div
             v-for="log in paginatedLogs"
             :key="log.id"
@@ -215,98 +239,25 @@
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <h3>Логи не найдены</h3>
-          <p>Нет данных для отображения по текущим фильтрам</p>
         </div>
-      </div>
-
-      <!-- Пагинация внизу -->
-      <div
-        v-if="!loading && !error && filteredLogs.length > 0"
-        class="pagination pagination-bottom"
-      >
-        <button
-          class="pagination-btn"
-          :disabled="currentPage === 1"
-          @click="changePage(currentPage - 1)"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Назад
-        </button>
-
-        <div class="pagination-pages">
-          <button
-            v-if="currentPage > 3"
-            class="page-btn"
-            @click="changePage(1)"
-          >
-            1
-          </button>
-
-          <span v-if="currentPage > 4" class="pagination-ellipsis">...</span>
-
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            class="page-btn"
-            :class="{ active: page === currentPage }"
-            @click="changePage(page)"
-          >
-            {{ page }}
-          </button>
-
-          <span v-if="currentPage < totalPages - 3" class="pagination-ellipsis"
-            >...</span
-          >
-
-          <button
-            v-if="currentPage < totalPages - 2"
-            class="page-btn"
-            @click="changePage(totalPages)"
-          >
-            {{ totalPages }}
-          </button>
-        </div>
-
-        <button
-          class="pagination-btn"
-          :disabled="currentPage === totalPages"
-          @click="changePage(currentPage + 1)"
-        >
-          Вперед
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineProps, defineEmits } from "vue";
+import {
+  ref,
+  computed,
+  onMounted,
+  watch,
+  defineProps,
+  defineEmits,
+  nextTick,
+} from "vue";
 import axios from "axios";
+
+const VITE_FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 
 const props = defineProps({
   server: {
@@ -316,6 +267,9 @@ const props = defineProps({
   domain: {
     type: String,
     default: "",
+  },
+  chengeFilter: {
+    type: Function,
   },
   filters: {
     type: Object,
@@ -336,8 +290,9 @@ const filteredLogs = ref([]);
 const loading = ref(false);
 const error = ref("");
 const currentPage = ref(1);
-const itemsPerPage = ref(10);
+const itemsPerPage = ref(15); // Увеличил количество элементов на странице
 const showStats = ref(false);
+const logListRef = ref(null);
 
 // Применение фильтров
 const applyFilters = () => {
@@ -424,6 +379,7 @@ const applyFilters = () => {
 };
 
 // Загрузка логов
+// https://api28.apitter.com/api/getLogs
 const fetchLogs = async () => {
   if (!props.server || !props.domain) {
     logs.value = [];
@@ -436,20 +392,57 @@ const fetchLogs = async () => {
   error.value = "";
 
   try {
-    const response = await axios.post("https://api28.apitter.com/api/getLogs", {
-      server: props.server,
-      domain: props.domain,
-    });
+    // Получаем токен из localStorage
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      throw new Error(
+        "Токен авторизации отсутствует. Пожалуйста, войдите снова."
+      );
+    }
+
+    const response = await axios.post(
+      `${VITE_FRONTEND_URL}getLogs`,
+      {
+        server: props.server,
+        domain: props.domain,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (response.data.success) {
       logs.value = response.data.data.rows || [];
       applyFilters(); // Применяем фильтры после загрузки
     } else {
-      throw new Error("Ошибка при получении логов");
+      throw new Error(response.data.message || "Ошибка при получении логов");
     }
   } catch (err) {
     console.error("Ошибка загрузки логов:", err);
-    error.value = err.response?.data?.message || "Не удалось загрузить логи";
+
+    // Обработка различных типов ошибок
+    if (err.response?.status === 401) {
+      error.value = "Ошибка авторизации. Пожалуйста, войдите снова.";
+      // Очищаем токен и перенаправляем на логин
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+      // router.push('/login'); // раскомментируй если используешь Vue Router
+    } else if (err.response?.status === 403) {
+      error.value = "Доступ запрещен";
+    } else if (err.message?.includes("Токен авторизации отсутствует")) {
+      error.value = err.message;
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message;
+    } else if (err.request) {
+      error.value = "Ошибка сети: не удалось подключиться к серверу";
+    } else {
+      error.value = "Не удалось загрузить логи";
+    }
+
     logs.value = [];
     filteredLogs.value = [];
   } finally {
@@ -463,6 +456,9 @@ const paginatedLogs = computed(() => {
   const end = start + itemsPerPage.value;
   return filteredLogs.value.slice(start, end);
 });
+
+// Автоматическая прокрутка при добавлении новых логов
+watch(paginatedLogs, () => {}, { deep: true });
 
 // Общее количество страниц
 const totalPages = computed(() =>
@@ -495,10 +491,11 @@ const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
     // Прокрутка к верху списка при смене страницы
-    const logList = document.querySelector(".log-list");
-    if (logList) {
-      logList.scrollTop = 0;
-    }
+    nextTick(() => {
+      if (logListRef.value) {
+        logListRef.value.scrollTop = 0;
+      }
+    });
   }
 };
 
@@ -560,19 +557,22 @@ onMounted(() => {
 
 <style scoped>
 .log-list-container {
-  height: 100vh; /* Занимаем всю высоту viewport */
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #fff;
-  overflow: hidden; /* Убираем любой скролл у контейнера */
+  overflow: hidden;
 }
 
 /* Кнопка показа статистики */
 .stats-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 8px 12px;
   border-bottom: 1px solid #e2e8f0;
   background-color: #f8fafc;
-  flex-shrink: 0; /* Не сжимается */
+  flex-shrink: 0;
 }
 
 /* Статистика */
@@ -583,7 +583,7 @@ onMounted(() => {
   border-bottom: 1px solid #e2e8f0;
   gap: 12px;
   flex-wrap: wrap;
-  flex-shrink: 0; /* Не сжимается */
+  flex-shrink: 0;
 }
 
 /* Пагинация сверху */
@@ -596,7 +596,7 @@ onMounted(() => {
 
 /* Основной контейнер контента */
 .logs-wrapper {
-  flex: 1; /* Занимает все оставшееся пространство */
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -605,19 +605,51 @@ onMounted(() => {
 
 /* Контейнер для логов */
 .log-content {
-  flex: 1; /* Занимает все оставшееся пространство */
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Важно для корректной работы flex */
-  overflow: hidden; /* Убираем скролл у контента */
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Блок логов с ВНУТРЕННИМ скроллом */
 .log-list {
-  flex: 1; /* Занимает все доступное пространство */
-  overflow-y: auto; /* ТОЛЬКО здесь есть скролл */
+  flex: 1;
+  overflow-y: auto;
   padding: 0;
-  min-height: 0; /* Важно для корректной работы flex */
+  min-height: 0;
+  /* Гарантируем, что контент будет виден полностью */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Элемент лога */
+.log-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+  /* Гарантируем, что элементы не сжимаются */
+  flex-shrink: 0;
+}
+
+.log-item:hover {
+  background-color: #f8fafc;
+}
+
+.log-item.error {
+  border-left: 3px solid #e53e3e;
+}
+
+.log-item.warn {
+  border-left: 3px solid #ed8936;
+}
+
+.log-item.info {
+  border-left: 3px solid #3182ce;
+}
+
+.log-item.success {
+  border-left: 3px solid #38a169;
 }
 
 /* Состояния загрузки и ошибки */
@@ -636,12 +668,33 @@ onMounted(() => {
 /* Пагинация снизу */
 .pagination-bottom {
   padding: 8px 12px;
-  flex-shrink: 0; /* Не сжимается */
+  flex-shrink: 0;
   border-top: 1px solid #e2e8f0;
   background-color: #f8fafc;
 }
 
-/* Остальные стили без изменений */
+.open-modal-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.open-modal-btn:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+/* Остальные стили остаются без изменений */
 .toggle-btn {
   display: flex;
   align-items: center;
@@ -791,32 +844,6 @@ onMounted(() => {
 
 .retry-btn:hover {
   background-color: #5a67d8;
-}
-
-.log-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  transition: background-color 0.2s;
-}
-
-.log-item:hover {
-  background-color: #f8fafc;
-}
-
-.log-item.error {
-  border-left: 3px solid #e53e3e;
-}
-
-.log-item.warn {
-  border-left: 3px solid #ed8936;
-}
-
-.log-item.info {
-  border-left: 3px solid #3182ce;
-}
-
-.log-item.success {
-  border-left: 3px solid #38a169;
 }
 
 .log-main {

@@ -1,14 +1,14 @@
 <template>
   <header class="log-header">
-    <div class="header-content">
-      <div class="header-main">
-        <h2>Системные логи</h2>
-        <div class="header-actions">
-          <button class="toggle-filters-btn" @click="toggleFilters">
+    <div class="modal-overlay">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Фильтры логов</h3>
+          <button @click="close" class="close-btn">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -16,19 +16,14 @@
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <line x1="4" y1="21" x2="4" y2="14"></line>
-              <line x1="4" y1="10" x2="4" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="3"></line>
-              <line x1="20" y1="21" x2="20" y2="16"></line>
-              <line x1="20" y1="12" x2="20" y2="3"></line>
-              <line x1="1" y1="14" x2="7" y2="14"></line>
-              <line x1="9" y1="8" x2="15" y2="8"></line>
-              <line x1="17" y1="16" x2="23" y2="16"></line>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
-            {{ showFilters ? "Скрыть фильтры" : "Фильтры" }}
           </button>
-          <!-- <button class="refresh-btn" @click="$emit('refresh')">
+        </div>
+
+        <div class="modal-body">
+          <div class="search-box">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -39,101 +34,84 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
+              class="search-icon"
             >
-              <path d="M23 4v6h-6"></path>
-              <path d="M1 20v-6h6"></path>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-              <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            Обновить
-          </button> -->
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Поиск по логам..."
+              @input="applyFilters"
+            />
+          </div>
+
+          <div class="filter-controls">
+            <div class="filter-group">
+              <label class="filter-label">Уровень:</label>
+              <select
+                v-model="selectedLevel"
+                class="filter-select"
+                @change="applyFilters"
+              >
+                <option value="all">Все уровни</option>
+                <option value="INFO">Info</option>
+                <option value="WARN">Warning</option>
+                <option value="ERROR">Error</option>
+                <option value="DEBUG">Debug</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Сервер:</label>
+              <select
+                v-model="selectedServer"
+                class="filter-select"
+                @change="applyFilters"
+              >
+                <option value="all">Все серверы</option>
+                <option value="Frontend_vue">Frontend</option>
+                <option value="Be_pay">Be Pay</option>
+                <option value="Be_auth">Be Auth</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Статус:</label>
+              <select
+                v-model="selectedStatus"
+                class="filter-select"
+                @change="applyFilters"
+              >
+                <option value="all">Все</option>
+                <option value="success">2xx</option>
+                <option value="redirect">3xx</option>
+                <option value="client-error">4xx</option>
+                <option value="server-error">5xx</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Период:</label>
+              <select
+                v-model="selectedPeriod"
+                class="filter-select"
+                @change="applyFilters"
+              >
+                <option value="all">Все время</option>
+                <option value="today">Сегодня</option>
+                <option value="yesterday">Вчера</option>
+                <option value="week">Неделя</option>
+                <option value="month">Месяц</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div v-if="showFilters" class="filters-expanded">
-        <div class="search-box">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="search-icon"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Поиск по логам..."
-            @input="$emit('filter-change', getFilters())"
-          />
-        </div>
-
-        <div class="filter-controls">
-          <div class="filter-group">
-            <label class="filter-label">Уровень:</label>
-            <select
-              v-model="selectedLevel"
-              class="filter-select"
-              @change="$emit('filter-change', getFilters())"
-            >
-              <option value="all">Все уровни</option>
-              <option value="INFO">Info</option>
-              <option value="WARN">Warning</option>
-              <option value="ERROR">Error</option>
-              <option value="DEBUG">Debug</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Сервер:</label>
-            <select
-              v-model="selectedServer"
-              class="filter-select"
-              @change="$emit('filter-change', getFilters())"
-            >
-              <option value="all">Все серверы</option>
-              <option value="Frontend_vue">Frontend</option>
-              <option value="Be_pay">Be Pay</option>
-              <option value="Be_auth">Be Auth</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Статус:</label>
-            <select
-              v-model="selectedStatus"
-              class="filter-select"
-              @change="$emit('filter-change', getFilters())"
-            >
-              <option value="all">Все</option>
-              <option value="success">2xx</option>
-              <option value="redirect">3xx</option>
-              <option value="client-error">4xx</option>
-              <option value="server-error">5xx</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Период:</label>
-            <select
-              v-model="selectedPeriod"
-              class="filter-select"
-              @change="$emit('filter-change', getFilters())"
-            >
-              <option value="all">Все время</option>
-              <option value="today">Сегодня</option>
-              <option value="yesterday">Вчера</option>
-              <option value="week">Неделя</option>
-              <option value="month">Месяц</option>
-            </select>
-          </div>
+        <div class="modal-footer">
+          <button class="apply-btn" @click="applyAndClose">Применить</button>
+          <button class="reset-btn" @click="resetFilters">Сбросить</button>
         </div>
       </div>
     </div>
@@ -145,16 +123,18 @@ import { ref, defineEmits, defineExpose } from "vue";
 
 const emit = defineEmits(["refresh", "filter-change"]);
 
-const showFilters = ref(false);
+const props = defineProps({
+  close: {
+    type: Function,
+  },
+});
+
+const showModal = ref(false);
 const searchQuery = ref("");
 const selectedLevel = ref("all");
 const selectedServer = ref("all");
 const selectedStatus = ref("all");
 const selectedPeriod = ref("all");
-
-const toggleFilters = () => {
-  showFilters.value = !showFilters.value;
-};
 
 const getFilters = () => {
   return {
@@ -166,6 +146,24 @@ const getFilters = () => {
   };
 };
 
+const applyFilters = () => {
+  emit("filter-change", getFilters());
+};
+
+const applyAndClose = () => {
+  applyFilters();
+  props.close();
+};
+
+const resetFilters = () => {
+  searchQuery.value = "";
+  selectedLevel.value = "all";
+  selectedServer.value = "all";
+  selectedStatus.value = "all";
+  selectedPeriod.value = "all";
+  applyFilters();
+};
+
 // Экспортируем значения фильтров для использования в родительском компоненте
 defineExpose({
   searchQuery,
@@ -174,7 +172,6 @@ defineExpose({
   selectedStatus,
   selectedPeriod,
   getFilters,
-  toggleFilters,
 });
 </script>
 
@@ -192,27 +189,7 @@ defineExpose({
   padding: 12px 16px;
 }
 
-.header-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.log-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toggle-filters-btn {
+.open-modal-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -228,16 +205,83 @@ defineExpose({
   white-space: nowrap;
 }
 
-.toggle-filters-btn:hover {
+.open-modal-btn:hover {
   background-color: #edf2f7;
   border-color: #cbd5e0;
 }
 
-.refresh-btn {
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #718096;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background-color: #f7fafc;
+  color: #4a5568;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.apply-btn {
+  padding: 8px 16px;
   background-color: #667eea;
   color: white;
   border: none;
@@ -246,21 +290,30 @@ defineExpose({
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-  white-space: nowrap;
 }
 
-.refresh-btn:hover {
+.apply-btn:hover {
   background-color: #5a67d8;
 }
 
-/* Расширенная область фильтров */
-.filters-expanded {
+.reset-btn {
+  padding: 8px 16px;
   background-color: #f8fafc;
-  border-radius: 6px;
-  padding: 16px;
+  color: #4a5568;
   border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
+.reset-btn:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+/* Стили для фильтров (оставлены без изменений) */
 .search-box {
   position: relative;
   display: flex;
@@ -295,7 +348,7 @@ defineExpose({
 
 .filter-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -340,39 +393,26 @@ defineExpose({
 }
 
 /* Адаптивность */
-@media (max-width: 1024px) {
-  .filter-controls {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-  }
-}
-
 @media (max-width: 768px) {
-  .header-main {
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    margin-bottom: 12px;
   }
 
-  .header-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .filter-controls {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .search-box input {
-    font-size: 14px;
-    height: 34px;
-  }
-
-  .filter-select {
-    font-size: 14px;
-    height: 34px;
+  .apply-btn,
+  .reset-btn {
+    width: 100%;
   }
 }
 
@@ -381,37 +421,11 @@ defineExpose({
     padding: 10px 12px;
   }
 
-  .log-header h2 {
-    font-size: 16px;
-  }
-
-  .header-actions {
-    flex-direction: row;
-    gap: 6px;
-  }
-
-  .toggle-filters-btn,
-  .refresh-btn {
+  .open-modal-btn {
     padding: 6px 10px;
     font-size: 12px;
-    flex: 1;
-    min-width: auto;
-  }
-
-  .filters-expanded {
-    padding: 12px;
-  }
-
-  .search-box {
-    margin-bottom: 12px;
-  }
-
-  .filter-group {
-    gap: 4px;
-  }
-
-  .filter-label {
-    font-size: 11px;
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
