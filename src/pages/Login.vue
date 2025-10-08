@@ -230,7 +230,12 @@ const handleLogin = async () => {
 
       console.log("Успешная авторизация!", data);
 
-      router.push("/logs");
+      window.dispatchEvent(new Event("storage"));
+
+      // Перенаправление на главную страницу
+      router.push("/");
+
+      // router.push("/logs");
     } else {
       if (data.errorType === "login") {
         errors.login = data.message;
