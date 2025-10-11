@@ -1,6 +1,6 @@
 <template>
   <div class="log-list-container">
-    <div class="stats-toggle">
+    <div v-if="domain && server" class="stats-toggle">
       <button class="toggle-btn" @click="showStats = !showStats">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -220,7 +220,9 @@
         </div>
 
         <div
-          v-if="!loading && !error && filteredLogs.length === 0"
+          v-if="
+            !loading && !error && filteredLogs.length === 0 && server && domain
+          "
           class="empty-state"
         >
           <svg
@@ -239,6 +241,28 @@
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <h3>Логи не найдены</h3>
+        </div>
+        <div class="select-date-section" v-if="!server && !domain">
+          <div class="select-data-info">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="50"
+              height="50"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill="#4f4f4f"
+                d="M9.854 5.854a.5.5 0 0 0-.708-.708L6.5 7.793L5.354 6.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0zM2 4.5A2.5 2.5 0 0 1 4.5 2h5A2.5 2.5 0 0 1 12 4.5v5A2.5 2.5 0 0 1 9.5 12h-5A2.5 2.5 0 0 1 2 9.5zM4.5 3A1.5 1.5 0 0 0 3 4.5v5A1.5 1.5 0 0 0 4.5 11h5A1.5 1.5 0 0 0 11 9.5v-5A1.5 1.5 0 0 0 9.5 3zM7 14a2.5 2.5 0 0 1-2-1h4.5A3.5 3.5 0 0 0 13 9.5V4c.607.456 1 1.182 1 2v3.5A4.5 4.5 0 0 1 9.5 14z"
+              />
+            </svg>
+            <div class="select-date-text-cont">
+              <h2 class="select-date-title">A-Logger</h2>
+              <span class="select-date-subtitle"
+                >Выберите домен и сервер <br />
+                для просмотра логов</span
+              >
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -551,6 +575,8 @@ watch(
 onMounted(() => {
   if (props.server && props.domain) {
     fetchLogs();
+  } else {
+    console.log("Нет инфы");
   }
 });
 </script>
@@ -654,8 +680,7 @@ onMounted(() => {
 
 /* Состояния загрузки и ошибки */
 .loading-state,
-.error-state,
-.empty-state {
+.error-state {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -663,6 +688,14 @@ onMounted(() => {
   justify-content: center;
   padding: 40px 20px;
   min-height: 0;
+}
+.empty-state {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
 
 /* Пагинация снизу */
@@ -692,6 +725,30 @@ onMounted(() => {
 .open-modal-btn:hover {
   background-color: #edf2f7;
   border-color: #cbd5e0;
+}
+
+.select-date-section {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-data-info {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.select-date-text-cont {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  /* width: 400px; */
 }
 
 /* Остальные стили остаются без изменений */

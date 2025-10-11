@@ -169,7 +169,14 @@ const isSidebarOpen = ref(false);
 const servers = ref([
   {
     name: "frontend_vue",
-    domains: ["whatsApi", "touchApi", "chatserv", "chatcrew", "mwi"],
+    domains: [
+      "chatserv.apitter.com",
+      "mwi.apitter.com",
+      "ctacrew.apitter.com",
+      "app.chatserv.ru",
+      "app.whatsapi.ru",
+      "app2.touch-api.com",
+    ],
     isOpen: false,
   },
   {
